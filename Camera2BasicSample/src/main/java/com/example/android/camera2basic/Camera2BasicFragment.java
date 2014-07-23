@@ -32,13 +32,18 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.DngCreator;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.MediaStore;
+import android.text.format.Time;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -58,14 +63,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Camera2BasicFragment extends Fragment implements View.OnClickListener {
+public class Camera2BasicFragment extends Fragment implements View.OnClickListener
+{
 
     /**
      * Conversion from screen rotation to JPEG orientation.
      */
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
-    static {
+    static
+    {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
         ORIENTATIONS.append(Surface.ROTATION_90, 0);
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
@@ -93,33 +100,47 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     private CameraDevice mCameraDevice;
 
     /**
+     * A {@link CaptureResult} for DNG creation.
+     */
+    private CaptureResult mCaptureResult;
+
+    /**
      * {@link TextureView.SurfaceTextureListener} handles several lifecycle events on a
      * {@link TextureView}.
      */
     private TextureView.SurfaceTextureListener mSurfaceTextureListener
-            = new TextureView.SurfaceTextureListener() {
+            = new TextureView.SurfaceTextureListener()
+    {
 
         @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture,
-                                              int width, int height) {
+        public void onSurfaceTextureAvailable(
+                SurfaceTexture surfaceTexture,
+                int width, int height
+                                             )
+        {
             configureTransform(width, height);
             startPreview();
         }
 
         @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture,
-                                                int width, int height) {
+        public void onSurfaceTextureSizeChanged(
+                SurfaceTexture surfaceTexture,
+                int width, int height
+                                               )
+        {
             configureTransform(width, height);
             startPreview();
         }
 
         @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture)
+        {
             return true;
         }
 
         @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+        public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture)
+        {
         }
 
     };
@@ -137,10 +158,12 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     /**
      * {@link CameraDevice.StateListener} is called when {@link CameraDevice} changes its state.
      */
-    private CameraDevice.StateListener mStateListener = new CameraDevice.StateListener() {
+    private CameraDevice.StateListener mStateListener = new CameraDevice.StateListener()
+    {
 
         @Override
-        public void onOpened(CameraDevice cameraDevice) {
+        public void onOpened(CameraDevice cameraDevice)
+        {
             // This method is called when the camera is opened.  We start camera preview here.
             mCameraDevice = cameraDevice;
             startPreview();
@@ -148,18 +171,21 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         }
 
         @Override
-        public void onDisconnected(CameraDevice cameraDevice) {
+        public void onDisconnected(CameraDevice cameraDevice)
+        {
             cameraDevice.close();
             mCameraDevice = null;
             mOpeningCamera = false;
         }
 
         @Override
-        public void onError(CameraDevice cameraDevice, int error) {
+        public void onError(CameraDevice cameraDevice, int error)
+        {
             cameraDevice.close();
             mCameraDevice = null;
             Activity activity = getActivity();
-            if (null != activity) {
+            if (null != activity)
+            {
                 activity.finish();
             }
             mOpeningCamera = false;
@@ -167,20 +193,25 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
     };
 
-    public static Camera2BasicFragment newInstance() {
+    public static Camera2BasicFragment newInstance()
+    {
         Camera2BasicFragment fragment = new Camera2BasicFragment();
         fragment.setRetainInstance(true);
         return fragment;
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(
+            LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState
+                            )
+    {
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
 
     @Override
-    public void onViewCreated(final View view, Bundle savedInstanceState) {
+    public void onViewCreated(final View view, Bundle savedInstanceState)
+    {
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         view.findViewById(R.id.picture).setOnClickListener(this);
@@ -188,15 +219,18 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     }
 
     @Override
-    public void onResume() {
+    public void onResume()
+    {
         super.onResume();
         openCamera();
     }
 
     @Override
-    public void onPause() {
+    public void onPause()
+    {
         super.onPause();
-        if (null != mCameraDevice) {
+        if (null != mCameraDevice)
+        {
             mCameraDevice.close();
             mCameraDevice = null;
         }
@@ -205,14 +239,17 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     /**
      * Opens a {@link CameraDevice}. The result is listened by `mStateListener`.
      */
-    private void openCamera() {
+    private void openCamera()
+    {
         Activity activity = getActivity();
-        if (null == activity || activity.isFinishing() || mOpeningCamera) {
+        if (null == activity || activity.isFinishing() || mOpeningCamera)
+        {
             return;
         }
         mOpeningCamera = true;
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-        try {
+        try
+        {
             String cameraId = manager.getCameraIdList()[0];
 
             // To get a list of available sizes of camera preview, we retrieve an instance of
@@ -224,16 +261,21 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
             // We fit the aspect ratio of TextureView to the size of preview we picked.
             int orientation = getResources().getConfiguration().orientation;
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+            {
                 mTextureView.setAspectRatio(mPreviewSize.getWidth(), mPreviewSize.getHeight());
-            } else {
+            }
+            else
+            {
                 mTextureView.setAspectRatio(mPreviewSize.getHeight(), mPreviewSize.getWidth());
             }
 
             // We are opening the camera with a listener. When it is ready, onOpened of
             // mStateListener is called.
             manager.openCamera(cameraId, mStateListener, null);
-        } catch (CameraAccessException e) {
+        }
+        catch (CameraAccessException e)
+        {
             Toast.makeText(activity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
             activity.finish();
         }
@@ -242,11 +284,14 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     /**
      * Starts the camera preview.
      */
-    private void startPreview() {
-        if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
+    private void startPreview()
+    {
+        if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize)
+        {
             return;
         }
-        try {
+        try
+        {
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
 
@@ -261,26 +306,33 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             mPreviewBuilder.addTarget(surface);
 
             // Here, we create a CameraCaptureSession for camera preview.
-            mCameraDevice.createCaptureSession(Arrays.asList(surface),
-                    new CameraCaptureSession.StateListener() {
+            mCameraDevice.createCaptureSession(
+                    Arrays.asList(surface),
+                    new CameraCaptureSession.StateListener()
+                    {
 
                         @Override
-                        public void onConfigured(CameraCaptureSession cameraCaptureSession) {
+                        public void onConfigured(CameraCaptureSession cameraCaptureSession)
+                        {
                             // When the session is ready, we start displaying the preview.
                             mPreviewSession = cameraCaptureSession;
                             updatePreview();
                         }
 
                         @Override
-                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
+                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession)
+                        {
                             Activity activity = getActivity();
-                            if (null != activity) {
+                            if (null != activity)
+                            {
                                 Toast.makeText(activity, "Failed", Toast.LENGTH_SHORT).show();
                             }
                         }
                     }, null
-            );
-        } catch (CameraAccessException e) {
+                                              );
+        }
+        catch (CameraAccessException e)
+        {
             e.printStackTrace();
         }
     }
@@ -289,11 +341,14 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     /**
      * Updates the camera preview. {@link #startPreview()} needs to be called in advance.
      */
-    private void updatePreview() {
-        if (null == mCameraDevice) {
+    private void updatePreview()
+    {
+        if (null == mCameraDevice)
+        {
             return;
         }
-        try {
+        try
+        {
             // The camera preview can be run in a background thread. This is a Handler for camera
             // preview.
             setUpCaptureRequestBuilder(mPreviewBuilder);
@@ -303,7 +358,9 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
             // Finally, we start displaying the camera preview.
             mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), null, backgroundHandler);
-        } catch (CameraAccessException e) {
+        }
+        catch (CameraAccessException e)
+        {
             e.printStackTrace();
         }
     }
@@ -313,7 +370,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      *
      * @param builder The builder for a {@link CaptureRequest}
      */
-    private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder) {
+    private void setUpCaptureRequestBuilder(CaptureRequest.Builder builder)
+    {
         // In this sample, we just let the camera device pick the automatic settings.
         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
     }
@@ -326,9 +384,11 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      * @param viewWidth  The width of `mTextureView`
      * @param viewHeight The height of `mTextureView`
      */
-    private void configureTransform(int viewWidth, int viewHeight) {
+    private void configureTransform(int viewWidth, int viewHeight)
+    {
         Activity activity = getActivity();
-        if (null == mTextureView || null == mPreviewSize || null == activity) {
+        if (null == mTextureView || null == mPreviewSize || null == activity)
+        {
             return;
         }
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -337,12 +397,14 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
         float centerX = viewRect.centerX();
         float centerY = viewRect.centerY();
-        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
+        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation)
+        {
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
             float scale = Math.max(
                     (float) viewHeight / mPreviewSize.getHeight(),
-                    (float) viewWidth / mPreviewSize.getWidth());
+                    (float) viewWidth / mPreviewSize.getWidth()
+                                  );
             matrix.postScale(scale, scale, centerX, centerY);
             matrix.postRotate(90 * (rotation - 2), centerX, centerY);
         }
@@ -352,34 +414,39 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     /**
      * Takes a picture.
      */
-    private void takePicture() {
-        try {
+    private void takePicture()
+    {
+        try
+        {
             final Activity activity = getActivity();
-            if (null == activity || null == mCameraDevice) {
+            if (null == activity || null == mCameraDevice)
+            {
                 return;
             }
             CameraManager manager =
                     (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
 
             // Pick the best JPEG size that can be captured with this CameraDevice.
-            CameraCharacteristics characteristics =
+            final CameraCharacteristics characteristics =
                     manager.getCameraCharacteristics(mCameraDevice.getId());
             Size[] jpegSizes = null;
-            if (characteristics != null) {
+            if (characteristics != null)
+            {
                 jpegSizes = characteristics
                         .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                        .getOutputSizes(ImageFormat.JPEG);
+                        .getOutputSizes(ImageFormat.RAW_SENSOR);
             }
             int width = 640;
             int height = 480;
-            if (jpegSizes != null && 0 < jpegSizes.length) {
+            if (jpegSizes != null && 0 < jpegSizes.length)
+            {
                 width = jpegSizes[0].getWidth();
                 height = jpegSizes[0].getHeight();
             }
 
             // We use an ImageReader to get a JPEG from CameraDevice.
             // Here, we create a new ImageReader and prepare its Surface as an output from camera.
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.RAW_SENSOR, 1);
             List<Surface> outputSurfaces = new ArrayList<Surface>(2);
             outputSurfaces.add(reader.getSurface());
             outputSurfaces.add(new Surface(mTextureView.getSurfaceTexture()));
@@ -387,47 +454,62 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             // This is the CaptureRequest.Builder that we use to take a picture.
             final CaptureRequest.Builder captureBuilder =
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.set(
+                    CaptureRequest.STATISTICS_LENS_SHADING_MAP_MODE,
+                    CaptureRequest.STATISTICS_LENS_SHADING_MAP_MODE_ON
+                              );
             captureBuilder.addTarget(reader.getSurface());
+
             setUpCaptureRequestBuilder(captureBuilder);
 
             // Orientation
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
 
+            Time date = new Time();
+            date.setToNow();
+
+            String filename = "picture_" + date.monthDay + date.month + date.year + "_" + date.hour + date.minute + "_" + Math
+                    .random() + ".dng";
+
+            File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/RAW");
+
+            if (!directory.exists() && !directory.mkdir())
+            {
+                return;
+            }
+
             // Output file
-            final File file = new File(activity.getExternalFilesDir(null), "pic.jpg");
+            final File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/RAW", filename);
 
             // This listener is called when a image is ready in ImageReader
             ImageReader.OnImageAvailableListener readerListener =
-                    new ImageReader.OnImageAvailableListener() {
+                    new ImageReader.OnImageAvailableListener()
+                    {
                         @Override
-                        public void onImageAvailable(ImageReader reader) {
+                        public void onImageAvailable(ImageReader reader)
+                        {
                             Image image = null;
-                            try {
+                            try
+                            {
                                 image = reader.acquireLatestImage();
-                                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                                byte[] bytes = new byte[buffer.capacity()];
-                                buffer.get(bytes);
-                                save(bytes);
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } finally {
-                                if (image != null) {
-                                    image.close();
-                                }
+                                OutputStream output = new FileOutputStream(file);
+                                DngCreator dcImage = new DngCreator(characteristics, mCaptureResult);
+                                dcImage.writeImage(output, image);
                             }
-                        }
-
-                        private void save(byte[] bytes) throws IOException {
-                            OutputStream output = null;
-                            try {
-                                output = new FileOutputStream(file);
-                                output.write(bytes);
-                            } finally {
-                                if (null != output) {
-                                    output.close();
+                            catch (FileNotFoundException e)
+                            {
+                                e.printStackTrace();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                            finally
+                            {
+                                if (image != null)
+                                {
+                                    image.close();
                                 }
                             }
                         }
@@ -443,12 +525,16 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             // Note that the JPEG data is not available in this listener, but in the
             // ImageReader.OnImageAvailableListener we created above.
             final CameraCaptureSession.CaptureListener captureListener =
-                    new CameraCaptureSession.CaptureListener() {
+                    new CameraCaptureSession.CaptureListener()
+                    {
 
-                        @Override
-                        public void onCaptureCompleted(CameraCaptureSession session,
-                                                       CaptureRequest request,
-                                                       TotalCaptureResult result) {
+                        public void onCaptureCompleted(
+                                CameraCaptureSession session,
+                                CaptureRequest request,
+                                TotalCaptureResult result
+                                                      )
+                        {
+                            mCaptureResult = result;
                             Toast.makeText(activity, "Saved: " + file, Toast.LENGTH_SHORT).show();
                             // We restart the preview when the capture is completed
                             startPreview();
@@ -457,38 +543,54 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                     };
 
             // Finally, we can start a new CameraCaptureSession to take a picture.
-            mCameraDevice.createCaptureSession(outputSurfaces,
-                    new CameraCaptureSession.StateListener() {
+            mCameraDevice.createCaptureSession(
+                    outputSurfaces,
+                    new CameraCaptureSession.StateListener()
+                    {
                         @Override
-                        public void onConfigured(CameraCaptureSession session) {
-                            try {
-                                session.capture(captureBuilder.build(), captureListener,
-                                        backgroundHandler);
-                            } catch (CameraAccessException e) {
+                        public void onConfigured(CameraCaptureSession session)
+                        {
+                            try
+                            {
+                                session.capture(
+                                        captureBuilder.build(), captureListener,
+                                        backgroundHandler
+                                               );
+                            }
+                            catch (CameraAccessException e)
+                            {
                                 e.printStackTrace();
                             }
                         }
 
                         @Override
-                        public void onConfigureFailed(CameraCaptureSession session) {
+                        public void onConfigureFailed(CameraCaptureSession session)
+                        {
                         }
                     }, backgroundHandler
-            );
-        } catch (CameraAccessException e) {
+                                              );
+        }
+        catch (CameraAccessException e)
+        {
             e.printStackTrace();
         }
     }
 
     @Override
-    public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.picture: {
+    public void onClick(View view)
+    {
+        switch (view.getId())
+        {
+            case R.id.picture:
+            {
                 takePicture();
                 break;
             }
-            case R.id.info: {
+            case R.id.info:
+            {
                 Activity activity = getActivity();
-                if (null != activity) {
+                if (null != activity)
+                {
                     new AlertDialog.Builder(activity)
                             .setMessage(R.string.intro_message)
                             .setPositiveButton(android.R.string.ok, null)
