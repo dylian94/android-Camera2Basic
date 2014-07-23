@@ -16,15 +16,17 @@
 -->
 
 
-
 <resources>
-    <string name="app_name">Camera2Basic</string>
+    <string name="app_name">RAW (DNG) Photo Camera</string>
     <string name="intro_message">
         <![CDATA[
         
             
-            This sample demonstrates the basic use of Camera2 API. Check the source code to see how
-            you can display camera preview and take pictures.
+            This is a modified version of the Camera2Basic sample from Google, this version saves pictures in the DNG format.
+            \n
+            \nThe source code for this app can be found at:
+            \n
+            \nhttps://github.com/dylian94/android-Camera2Basic
             
         
         ]]>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.camera2basic;
+package eu.dylian.camera2basic;
 
 import android.content.Context;
 import android.util.AttributeSet;

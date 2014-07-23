@@ -16,23 +16,21 @@
 -->
 
 
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.android.camera2basic"
-    android:versionCode="1"
-    android:versionName="1.0">
-
-    <uses-sdk android:minSdkVersion="L" android:targetSdkVersion="L" />
+          package="eu.dylian.camera2basic">
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
-    <application android:allowBackup="true"
+    <application
+        android:allowBackup="true"
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher"
         android:theme="@style/MaterialTheme">
 
-        <activity android:name=".CameraActivity"
-                  android:label="@string/app_name">
+        <activity
+            android:name="eu.dylian.camera2basic.CameraActivity"
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

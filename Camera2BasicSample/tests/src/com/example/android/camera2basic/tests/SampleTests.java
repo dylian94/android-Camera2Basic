@@ -31,26 +31,29 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.example.android.camera2basic.tests;
+package eu.dylian.camera2basic.tests;
 
-import com.example.android.camera2basic.*;
+import eu.dylian.camera2basic.*;
 
 import android.test.ActivityInstrumentationTestCase2;
 
 /**
-* Tests for Camera2Basic sample.
-*/
-public class SampleTests extends ActivityInstrumentationTestCase2<CameraActivity> {
+ * Tests for Camera2Basic sample.
+ */
+public class SampleTests extends ActivityInstrumentationTestCase2<CameraActivity>
+{
 
-    private CameraActivity mTestActivity;
+    private CameraActivity       mTestActivity;
     private Camera2BasicFragment mTestFragment;
 
-    public SampleTests() {
+    public SampleTests()
+    {
         super(CameraActivity.class);
     }
 
     @Override
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
 
         // Starts the activity under test using the default Intent with:
@@ -59,13 +62,14 @@ public class SampleTests extends ActivityInstrumentationTestCase2<CameraActivity
         // All other fields are null or empty.
         mTestActivity = getActivity();
         mTestFragment = (Camera2BasicFragment)
-            mTestActivity.getSupportFragmentManager().getFragments().get(1);
+                mTestActivity.getSupportFragmentManager().getFragments().get(1);
     }
 
     /**
-    * Test if the test fixture has been set up correctly.
-    */
-    public void testPreconditions() {
+     * Test if the test fixture has been set up correctly.
+     */
+    public void testPreconditions()
+    {
         //Try to add a message to add context to your assertions. These messages will be shown if
         //a tests fails and make it easy to understand why a test failed
         assertNotNull("mTestActivity is null", mTestActivity);
@@ -73,7 +77,7 @@ public class SampleTests extends ActivityInstrumentationTestCase2<CameraActivity
     }
 
     /**
-    * Add more tests below.
-    */
+     * Add more tests below.
+     */
 
 }
