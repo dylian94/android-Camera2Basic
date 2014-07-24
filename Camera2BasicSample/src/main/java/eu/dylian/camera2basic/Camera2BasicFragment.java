@@ -38,12 +38,15 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.text.format.Time;
+import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -496,6 +499,17 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                                 OutputStream output = new FileOutputStream(file);
                                 DngCreator dcImage = new DngCreator(characteristics, mCaptureResult);
                                 dcImage.writeImage(output, image);
+                                MediaScannerConnection.scanFile(
+                                        activity, new String[]{file.toString()}, null,
+                                        new MediaScannerConnection.OnScanCompletedListener()
+                                        {
+                                            public void onScanCompleted(String path, Uri uri)
+                                            {
+                                                Log.i("ExternalStorage", "Scanned " + path + ":");
+                                                Log.i("ExternalStorage", "-> uri=" + uri);
+                                            }
+                                        }
+                                );
                             }
                             catch (FileNotFoundException e)
                             {
